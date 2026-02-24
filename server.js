@@ -10,14 +10,14 @@ const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => res.send("Server is awake!"));
 
-app.post('/save', (req, res) => {
-    fs.writeFileSync('./data.json', JSON.stringify(req.body));
+app.post('/savesdata1', (req, res) => {
+    fs.writeFileSync('./sdata1.json', JSON.stringify(req.body));
     res.json({ status: "Success" });
 });
 
-app.get('/load', (req, res) => {
-    if (fs.existsSync('./data.json')) {
-        res.send(fs.readFileSync('./data.json'));
+app.get('/loadsdata1', (req, res) => {
+    if (fs.existsSync('./sdata1.json')) {
+        res.send(fs.readFileSync('./sdata1.json'));
     } else {
         res.json({ content: "" });
     }
