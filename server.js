@@ -20,8 +20,8 @@ app.get('/load', (req, res) => {
         const rawData = fs.readFileSync('./data.json');
         res.json(JSON.parse(rawData));
     } else {
-        res.json({ content: "" });
+        res.json({ message: "" });
     }
 });
-
+//hi
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
