@@ -17,7 +17,8 @@ app.post('/save', (req, res) => {
 
 app.get('/load', (req, res) => {
     if (fs.existsSync('./data.json')) {
-        res.send(fs.readFileSync('./data.json'));
+        const rawData = fs.readFileSync('./data.json');
+        res.json(JSON.parse(rawData));
     } else {
         res.json({ content: "" });
     }
