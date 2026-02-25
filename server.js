@@ -12,7 +12,7 @@ app.get('/', (req, res) => res.send("Server is awake!"));
 
 app.post('/savesdata1', (req, res) => {
     writeFileSync('./sdata1.json', JSON.stringify(req.body));
-    res.json({ status: "Success" });
+    res.json({ status1: "Success" });
 });
 
 app.get('/loadsdata1', (req, res) => {
@@ -26,7 +26,7 @@ app.get('/loadsdata1', (req, res) => {
 
 app.post('/savesdata2', (req, res) => {
     writeFileSync('./sdata2.json', JSON.stringify(req.body));
-    res.json({ status: "Success" });
+    res.json({ status1: "Success" });
 });
 
 app.get('/loadsdata2', (req, res) => {
