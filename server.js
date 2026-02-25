@@ -17,11 +17,10 @@ app.post('/save', (req, res) => {
 
 app.get('/load', (req, res) => {
     if (existsSync('./data.json')) {
-        const rawData = readFileSync('./data.json');
-        const jsonData = JSON.parse(rawData); // Parse it first
-        res.json(jsonData); 
+        const fileData = readFileSync('./data.json', 'utf8');
+        res.json(JSON.parse(fileData)); // This ensures it's sent as a clean JSON object
     } else {
-        res.json({ message: "" }); // Match the key "message" used in frontend
+        res.json({ message: "" });
     }
 });
 
