@@ -24,4 +24,18 @@ app.get('/loadsdata1', (req, res) => {
     }
 });
 
+app.post('/savesdata2', (req, res) => {
+    writeFileSync('./sdata2.json', JSON.stringify(req.body));
+    res.json({ status: "Success" });
+});
+
+app.get('/loadsdata2', (req, res) => {
+    if (existsSync('./sdata2.json')) {
+        const fileData = readFileSync('./sdata2.json', 'utf8');
+        res.json(JSON.parse(fileData)); // This ensures it's sent as a clean JSON object
+    } else {
+        res.json({ message: "" });
+    }
+});
+
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
