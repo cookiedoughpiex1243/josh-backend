@@ -38,4 +38,32 @@ app.get('/loadsdata2', (req, res) => {
     }
 });
 
+app.post('/savecdata1', (req, res) => {
+    writeFileSync('./cdata1.json', JSON.stringify(req.body));
+    res.json({ status1: "Success" });
+});
+
+app.get('/loadcdata1', (req, res) => {
+    if (existsSync('./cdata1.json')) {
+        const fileData = readFileSync('./cdata1.json', 'utf8');
+        res.json(JSON.parse(fileData)); // This ensures it's sent as a clean JSON object
+    } else {
+        res.json({ message: "" });
+    }
+});
+
+app.post('/savecdata2', (req, res) => {
+    writeFileSync('./cdata2.json', JSON.stringify(req.body));
+    res.json({ status1: "Success" });
+});
+
+app.get('/loadcdata2', (req, res) => {
+    if (existsSync('./cdata2.json')) {
+        const fileData = readFileSync('./cdata2.json', 'utf8');
+        res.json(JSON.parse(fileData)); // This ensures it's sent as a clean JSON object
+    } else {
+        res.json({ message: "" });
+    }
+});
+
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
