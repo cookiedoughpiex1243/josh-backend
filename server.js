@@ -66,4 +66,26 @@ app.get('/loadcdata2', (req, res) => {
     }
 });
 
+app.post('/saveechat', (req, res) => {
+    let messages = [];
+    if (existsSync('./echat.json')) {
+        try {
+            messages = JSON.parse(readFileSync('./echat.json', 'utf8'));
+            if (!Array.isArray(messages)) messages = [];
+        } catch (e) { messages = []; }
+    }
+    messages.push(req.body);
+    writeFileSync('./echat.json', JSON.stringify(messages));
+    res.json({ status: "Success" });
+});
+
+app.get('/loadechat', (req, res) => {
+    if (existsSync('./echat.json')) {
+        const fileData = readFileSync('./echat.json', 'utf8');
+        res.json(JSON.parse(fileData));
+    } else {
+        res.json([]);
+    }
+});
+
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
