@@ -87,5 +87,8 @@ app.get('/loadechat', (req, res) => {
         res.json([]);
     }
 });
-
+app.post('/deleteechat', (req, res) => {
+    writeFileSync('./echat.json', JSON.stringify([]));
+    res.json({ status: "Success" });
+});
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
