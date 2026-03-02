@@ -87,7 +87,7 @@ app.get('/loadechat', (req, res) => {
         res.json([]);
     }
 });
-app.post('/deleteechat', (req, res) => {
+app.delete('/deleteechat', (req, res) => {
     writeFileSync('./echat.json', JSON.stringify([]));
     res.json({ status: "Success" });
 });
