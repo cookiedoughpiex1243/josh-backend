@@ -39,6 +39,14 @@ app.get('/loadsdata2', (req, res) => {
 });
 
 app.post('/savecdata1', (req, res) => {
+    let messages = [];
+    if (existsSync('./echat.json')) {
+        try {
+            messages = JSON.parse(readFileSync('./echat.json', 'utf8'));
+            if (!Array.isArray(messages)) messages = [];
+        } catch (e) { messages = []; }
+    }
+    messages.push(req.body)
     writeFileSync('./cdata1.json', JSON.stringify(req.body));
     res.json({ status1: "Success" });
 });
@@ -51,6 +59,11 @@ app.get('/loadcdata1', (req, res) => {
         res.json({ message: "" });
     }
 });
+
+app.delete('/deletecdata1'), (req,res) => {
+    writeFileSync('cdata1.json', JSON.stringify([]));
+    res.json("status: success.")
+}
 
 app.post('/savecdata2', (req, res) => {
     writeFileSync('./cdata2.json', JSON.stringify(req.body));
