@@ -45,7 +45,7 @@ app.post('/savesdata1', (req, res) => {
 app.get('/loadsdata1', (req, res) => {
     if (existsSync('./sdata1.json')) {
         const fileData = readFileSync('./sdata1.json', 'utf8');
-        res.json(JSON.parse(fileData)); // This ensures it's sent as a clean JSON object
+        res.json(JSON.parse(fileData)); 
     } else {
         res.json({ message: "" });
     }
@@ -74,7 +74,7 @@ app.post('/savecdata1', (req, res) => {
         } catch (e) { messages = []; }
     }
     messages.push(req.body)
-    writeFileSync('./cdata1.json', JSON.stringify(req.body));
+    writeFileSync('./cdata1.json', JSON.stringify(messages));
     res.json({ status1: "Success" });
 });
 
