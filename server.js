@@ -30,7 +30,6 @@ app.use((req, res, next) => {
   next();
 
 });
-Copy
 
 
 const PORT = process.env.PORT || 3000;
@@ -87,10 +86,10 @@ app.get('/loadcdata1', (req, res) => {
     }
 });
 
-app.delete('/deletecdata1'), (req,res) => {
-    writeFileSync('cdata1.json', JSON.stringify([]));
-    res.json("status: success.")
-}
+app.delete('/deletecdata1', (req,res) => {
+    writeFileSync('./cdata1.json', JSON.stringify([]));
+    res.json({status: "success."});
+});
 
 app.post('/savecdata2', (req, res) => {
     writeFileSync('./cdata2.json', JSON.stringify(req.body));
