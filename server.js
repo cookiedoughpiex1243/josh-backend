@@ -40,9 +40,9 @@ app.get('/loadsdata2', (req, res) => {
 
 app.post('/savecdata1', (req, res) => {
     let messages = [];
-    if (existsSync('./echat.json')) {
+    if (existsSync('./cdata1.json')) {
         try {
-            messages = JSON.parse(readFileSync('./echat.json', 'utf8'));
+            messages = JSON.parse(readFileSync('./cdata1.json', 'utf8'));
             if (!Array.isArray(messages)) messages = [];
         } catch (e) { messages = []; }
     }
