@@ -5,6 +5,33 @@ const app = express();
 
 app.use(cors());
 app.use(json());
+const allowedOrigins = ['https://cookiedoughpiex1243.github.io', 'https://www.cookiedoughpiex1243.github.io'];
+
+app.use((req, res, next) => {
+
+  const origin = req.headers.origin;
+
+  if (allowedOrigins.includes(origin)) {
+
+    res.header('Access-Control-Allow-Origin', origin);
+
+  }
+
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+
+    return res.status(200).end();
+
+  }
+
+  next();
+
+});
+Copy
+
 
 const PORT = process.env.PORT || 3000;
 
