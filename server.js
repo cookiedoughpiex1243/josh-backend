@@ -83,7 +83,7 @@ app.get('/loadcdata1', (req, res) => {
         const fileData = readFileSync('./cdata1.json', 'utf8');
         res.json(JSON.parse(fileData)); // This ensures it's sent as a clean JSON object
     } else {
-        res.json({ message: "" });
+        res.json([]);
     }
 });
 
