@@ -1,41 +1,40 @@
 import express, { json } from 'express';
 import cors from 'cors';
 import { writeFileSync, existsSync, readFileSync } from 'fs';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+    cors: {
+        origin: ["https://cookiedoughpiex1243.github.io", "https://www.cookiedoughpiex1243.github.io"],
+        methods: ["GET", "POST"]
+    }
+});
 
 app.use(cors());
 app.use(json());
 const allowedOrigins = ['https://cookiedoughpiex1243.github.io', 'https://www.cookiedoughpiex1243.github.io'];
 
 app.use((req, res, next) => {
-
   const origin = req.headers.origin;
-
   if (allowedOrigins.includes(origin)) {
-
     res.header('Access-Control-Allow-Origin', origin);
-
   }
-
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
   if (req.method === 'OPTIONS') {
-
     return res.status(200).end();
-
   }
-
   next();
-
 });
-
 
 const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => res.send("Server is awake!"));
 
+// --- Notes Logic ---
 app.post('/savesdata1', (req, res) => {
     writeFileSync('./sdata1.json', JSON.stringify(req.body));
     res.json({ status1: "Success" });
@@ -58,76 +57,61 @@ app.post('/savesdata2', (req, res) => {
 app.get('/loadsdata2', (req, res) => {
     if (existsSync('./sdata2.json')) {
         const fileData = readFileSync('./sdata2.json', 'utf8');
-        res.json(JSON.parse(fileData)); // This ensures it's sent as a clean JSON object
+        res.json(JSON.parse(fileData));
     } else {
         res.json({ message: "" });
     }
 });
 
-app.post('/savecdata1', (req, res) => {
+// --- Chat Persistence Helpers ---
+function saveToChatFile(filename, message) {
     let messages = [];
-    if (existsSync('./cdata1.json')) {
+    if (existsSync(filename)) {
         try {
-            messages = JSON.parse(readFileSync('./cdata1.json', 'utf8'));
+            messages = JSON.parse(readFileSync(filename, 'utf8'));
             if (!Array.isArray(messages)) messages = [];
         } catch (e) { messages = []; }
     }
-    messages.push(req.body)
-    writeFileSync('./cdata1.json', JSON.stringify(messages));
-    res.json({ status1: "Success" });
-});
+    messages.push(message);
+    writeFileSync(filename, JSON.stringify(messages));
+}
 
+// --- REST Chat Endpoints (for history) ---
 app.get('/loadcdata1', (req, res) => {
     if (existsSync('./cdata1.json')) {
-        const fileData = readFileSync('./cdata1.json', 'utf8');
-        res.json(JSON.parse(fileData)); // This ensures it's sent as a clean JSON object
-    } else {
-        res.json([]);
-    }
-});
-
-app.delete('/deletecdata1', (req,res) => {
-    writeFileSync('./cdata1.json', JSON.stringify([]));
-    res.json({status: "success."});
-});
-
-app.post('/savecdata2', (req, res) => {
-    writeFileSync('./cdata2.json', JSON.stringify(req.body));
-    res.json({ status1: "Success" });
-});
-
-app.get('/loadcdata2', (req, res) => {
-    if (existsSync('./cdata2.json')) {
-        const fileData = readFileSync('./cdata2.json', 'utf8');
-        res.json(JSON.parse(fileData)); // This ensures it's sent as a clean JSON object
-    } else {
-        res.json({ message: "" });
-    }
-});
-
-app.post('/saveechat', (req, res) => {
-    let messages = [];
-    if (existsSync('./echat.json')) {
-        try {
-            messages = JSON.parse(readFileSync('./echat.json', 'utf8'));
-            if (!Array.isArray(messages)) messages = [];
-        } catch (e) { messages = []; }
-    }
-    messages.push(req.body);
-    writeFileSync('./echat.json', JSON.stringify(messages));
-    res.json({ status: "Success" });
+        res.json(JSON.parse(readFileSync('./cdata1.json', 'utf8')));
+    } else res.json([]);
 });
 
 app.get('/loadechat', (req, res) => {
     if (existsSync('./echat.json')) {
-        const fileData = readFileSync('./echat.json', 'utf8');
-        res.json(JSON.parse(fileData));
-    } else {
-        res.json([]);
-    }
+        res.json(JSON.parse(readFileSync('./echat.json', 'utf8')));
+    } else res.json([]);
 });
-app.delete('/deleteechat', (req, res) => {
-    writeFileSync('./echat.json', JSON.stringify([]));
-    res.json({ status: "Success" });
+
+// --- WebSockets Logic ---
+io.on('connection', (socket) => {
+    socket.on('join_room', (room) => {
+        socket.join(room);
+    });
+
+    socket.on('send_message', (data) => {
+        const { room, text, sender, timestamp } = data;
+        const msg = { text, sender, timestamp };
+        
+        // Persist
+        const filename = room === 'private' ? './echat.json' : './cdata1.json';
+        saveToChatFile(filename, msg);
+
+        // Broadcast to everyone in the room
+        io.to(room).emit('receive_message', msg);
+    });
+
+    socket.on('clear_chat', (room) => {
+        const filename = room === 'private' ? './echat.json' : './cdata1.json';
+        writeFileSync(filename, JSON.stringify([]));
+        io.to(room).emit('chat_cleared');
+    });
 });
-app.listen(PORT, () => console.log(`Listening on ${PORT}`));
+
+httpServer.listen(PORT, () => console.log(`Listening on ${PORT}`));
