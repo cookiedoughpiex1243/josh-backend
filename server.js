@@ -116,7 +116,7 @@ io.on('connection', (socket) => {
         socket.to(data.room).emit("display_typing");
     })
     socket.on("stop_typing", (data)=>{
-        socket.to(data.room, "hide_typing")
+        socket.to(data.room).emit("hide_typing")
     })
 });
 
