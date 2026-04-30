@@ -112,6 +112,12 @@ io.on('connection', (socket) => {
         writeFileSync(filename, JSON.stringify([]));
         io.to(room).emit('chat_cleared');
     });
+    socket.on("typing", (data) => {
+        socket.to(data.room).emit("display_typing");
+    })
+    socket.on("stop_typing", (data)=>{
+        socket.to(data.room, "hide_typing")
+    })
 });
 
 httpServer.listen(PORT, () => console.log(`Listening on ${PORT}`));
