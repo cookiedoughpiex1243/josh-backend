@@ -96,8 +96,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on('send_message', (data) => {
-        const { room, text, sender, timestamp } = data;
-        const msg = { text, sender, timestamp };
+        const { room, text, sender, timestamp, id } = data;
+        const msg = { text, sender, timestamp, id };
         
         // Persist
         const filename = room === 'private' ? './echat.json' : './cdata1.json';
