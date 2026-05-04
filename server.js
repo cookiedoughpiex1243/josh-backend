@@ -124,7 +124,7 @@ io.on('connection', (socket) => {
         let messages = [];
         if (existsSync(filename)) {        
         messages = JSON.parse(readFileSync(filename, 'utf8'));
-        filtered = messages.filter(msg => msg.id !== id);
+        const filtered = messages.filter(msg => msg.id !== id);
         writeFileSync(filename, JSON.stringify(filtered));
         io.to(room).emit("message_deleted", id);
         }
