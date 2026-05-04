@@ -118,6 +118,18 @@ io.on('connection', (socket) => {
     socket.on("stop_typing", (data)=>{
         socket.to(data.room).emit("hide_typing")
     })
+    socket.on("delete_message", (data) => {
+        const { room, id } = data;
+        const filename = room === 'private' ? './echat.json' : './cdata1.json';
+        let messages = [];
+        if (existsSync(filename)) {        
+        messages = JSON.parse(readFileSync(filename, 'utf8'));
+        filtered = messages.filter(msg => msg.id !== id);
+        writeFileSync(filename, JSON.stringify(filtered));
+        io.to(room).emit("message_deleted", id);
+        }
+    });
+                
 });
 
 httpServer.listen(PORT, () => console.log(`Listening on ${PORT}`));
