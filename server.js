@@ -96,9 +96,9 @@ io.on('connection', (socket) => {
     });
 
     socket.on('send_message', (data) => {
-        const { room, text, sender, timestamp, id } = data;
-        const msg = { text, sender, timestamp, id };
-        
+        const { room, text, sender, timestamp, id, Rid } = data;
+        const msg = { text, sender, timestamp, id, Rid };
+
         // Persist
         const filename = room === 'private' ? './echat.json' : './cdata1.json';
         saveToChatFile(filename, msg);
