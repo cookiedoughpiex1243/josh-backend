@@ -31,6 +31,8 @@ app.use((req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
+let hasFocus = false;
+let newMsgCounter = 0;
 
 app.get('/', (req, res) => res.send("Server is awake!"));
 
@@ -105,6 +107,7 @@ io.on('connection', (socket) => {
 
         // Broadcast to everyone in the room
         io.to(room).emit('receive_message', msg);
+        if(hasFocus == false) newMsgCounter++, writeFileSync("./newmsgcount", newMsgCounter)
     });
 
     socket.on('clear_chat', (room) => {
@@ -118,6 +121,16 @@ io.on('connection', (socket) => {
     socket.on("stop_typing", (data)=>{
         socket.to(data.room).emit("hide_typing")
     })
+    socket.on("focused", async  (data) => {
+        const {room, user} = data;
+        socket.username = user;
+        socket.activeRoom = room;
+        if (user == "josh" && room == "public") hasFocus = true, writeFileSync("./newmsgcount", 0)
+    });
+    socket.on("unfocused", (data) => {
+        const {room, user} = data;
+        if (user == "josh" && room == "public") hasFocus = false;
+    });
     socket.on("delete_message", (data) => {
         const { room, id } = data;
         const filename = room === 'private' ? './echat.json' : './cdata1.json';
@@ -129,7 +142,9 @@ io.on('connection', (socket) => {
         io.to(room).emit("message_deleted", id);
         }
     });
-                
+    socket.on("disconnect", (reason) => {
+        if (socket.username == "josh" && socket.activeRoom == "public") hasFocus = false;
+    })          
 });
 
 httpServer.listen(PORT, () => console.log(`Listening on ${PORT}`));
