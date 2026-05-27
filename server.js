@@ -51,6 +51,15 @@ app.get('/loadsdata1', (req, res) => {
     }
 });
 
+app.get('/newmsgcount', (req, res) => {
+    if (existsSync('./newmsgcount')) {
+        const count = readFileSync('./newmsgcount', 'utf8');
+        res.send(count); 
+    } else {
+        res.send("0");
+    }
+});
+
 app.post('/savesdata2', (req, res) => {
     writeFileSync('./sdata2.json', JSON.stringify(req.body));
     res.json({ status1: "Success" });
@@ -107,7 +116,7 @@ io.on('connection', (socket) => {
 
         // Broadcast to everyone in the room
         io.to(room).emit('receive_message', msg);
-        if(hasFocus == false) newMsgCounter++, writeFileSync("./newmsgcount", newMsgCounter)
+        if(hasFocus == false) newMsgCounter++, writeFileSync("./newmsgcount", String(newMsgCounter))
     });
 
     socket.on('clear_chat', (room) => {
@@ -125,7 +134,7 @@ io.on('connection', (socket) => {
         const {room, user} = data;
         socket.username = user;
         socket.activeRoom = room;
-        if (user == "josh" && room == "public") hasFocus = true, writeFileSync("./newmsgcount", 0)
+        if (user == "josh" && room == "public") hasFocus = true, writeFileSync("./newmsgcount", 0), newMsgCounter = 0;
     });
     socket.on("unfocused", (data) => {
         const {room, user} = data;
