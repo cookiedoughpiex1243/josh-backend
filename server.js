@@ -116,7 +116,8 @@ io.on('connection', (socket) => {
 
         // Broadcast to everyone in the room
         io.to(room).emit('receive_message', msg);
-        if(hasFocus == false) newMsgCounter++, writeFileSync("./newmsgcount", String(newMsgCounter))
+        if(hasFocus == false) newMsgCounter++, writeFileSync("./newmsgcount", String(newMsgCounter)),
+        io.to('private').emit("unread_update", newMsgCounter);
     });
 
     socket.on('clear_chat', (room) => {
@@ -134,11 +135,13 @@ io.on('connection', (socket) => {
         const {room, user} = data;
         socket.username = user;
         socket.activeRoom = room;
-        if (user == "josh" && room == "public") hasFocus = true, writeFileSync("./newmsgcount", 0), newMsgCounter = 0;
+        if (user == "josh" && room == "private") hasFocus = true, writeFileSync("./newmsgcount", "0"),
+        newMsgCounter = 0,
+        io.to('private').emit("unread_update", newMsgCounter);
     });
     socket.on("unfocused", (data) => {
         const {room, user} = data;
-        if (user == "josh" && room == "public") hasFocus = false;
+        if (user == "josh" && room == "private") hasFocus = false;
     });
     socket.on("delete_message", (data) => {
         const { room, id } = data;
@@ -152,7 +155,7 @@ io.on('connection', (socket) => {
         }
     });
     socket.on("disconnect", (reason) => {
-        if (socket.username == "josh" && socket.activeRoom == "public") hasFocus = false;
+        if (socket.username == "josh" && socket.activeRoom == "private") hasFocus = false;
     })          
 });
 
