@@ -123,7 +123,7 @@ io.on('connection', (socket) => {
 
     socket.on('clear_chat', (room) => {
         const filename = room === 'private' ? './echat.json' : './cdata1.json';
-        writeFileSync(filename, JSON.stringify([]));
+        writeFileSync(filename, JSON.stringify([{"text":"Hello :D, here's some information:\n\n/logout to logout (or just redirect to login page)\n\n/help for this message :D\n\n Message displayed due to chat being cleared with /clearall","sender":"System","timestamp":"12:59","id":1779866953161,"Rid":null}]));
         io.to(room).emit('chat_cleared');
     });
     socket.on("typing", (data) => {
