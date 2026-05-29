@@ -15,7 +15,7 @@ const io = new Server(httpServer, {
 
 app.use(cors());
 app.use(json());
-const allowedOrigins = ['https://cookiedoughpiex1243.github.io', 'https://www.cookiedoughpiex1243.github.io'];
+const allowedOrigins = ['https://cookiedoughpiex1243.github.io', 'https://www.cookiedoughpiex1243.github.io', "file://"];
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
