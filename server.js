@@ -1,6 +1,6 @@
 import express, { json } from 'express';
 import cors from 'cors';
-import { writeFileSync, existsSync, readFileSync } from 'fs';
+import { writeFileSync, existsSync, readFileSync } from 'fs'; // kept for newmsgcount only
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
@@ -26,6 +26,14 @@ const messageSchema = new mongoose.Schema({
 }, { versionKey: false });
 
 const Message = mongoose.model('Message', messageSchema);
+
+// --- Note Schema & Model ---
+const noteSchema = new mongoose.Schema({
+    slot:    { type: Number, required: true, unique: true }, // 1 or 2
+    message: { type: String, default: '' },
+}, { versionKey: false });
+
+const Note = mongoose.model('Note', noteSchema);
 
 // --- System seed message (used after /clearall) ---
 const SYSTEM_SEED = {
@@ -68,41 +76,53 @@ let newMsgCounter = 0;
 
 app.get('/', (req, res) => res.send("Server is awake!"));
 
-// --- Notes Logic ---
-app.post('/savesdata1', (req, res) => {
-    writeFileSync('./sdata1.json', JSON.stringify(req.body));
-    res.json({ status1: "Success" });
+// --- Notes Logic (MongoDB) ---
+app.post('/savesdata1', async (req, res) => {
+    try {
+        await Note.findOneAndUpdate({ slot: 1 }, { message: req.body.message ?? '' }, { upsert: true });
+        res.json({ status1: 'Success' });
+    } catch (err) {
+        console.error('/savesdata1 error:', err);
+        res.status(500).json({ status1: 'Error' });
+    }
 });
 
-app.get('/loadsdata1', (req, res) => {
-    if (existsSync('./sdata1.json')) {
-        const fileData = readFileSync('./sdata1.json', 'utf8');
-        res.json(JSON.parse(fileData)); 
-    } else {
-        res.json({ message: "" });
+app.get('/loadsdata1', async (req, res) => {
+    try {
+        const note = await Note.findOne({ slot: 1 }).lean();
+        res.json({ message: note?.message ?? '' });
+    } catch (err) {
+        console.error('/loadsdata1 error:', err);
+        res.json({ message: '' });
     }
 });
 
 app.get('/newmsgcount', (req, res) => {
     if (existsSync('./newmsgcount')) {
         const count = readFileSync('./newmsgcount', 'utf8');
-        res.send(count); 
+        res.send(count);
     } else {
-        res.send("0");
+        res.send('0');
     }
 });
 
-app.post('/savesdata2', (req, res) => {
-    writeFileSync('./sdata2.json', JSON.stringify(req.body));
-    res.json({ status1: "Success" });
+app.post('/savesdata2', async (req, res) => {
+    try {
+        await Note.findOneAndUpdate({ slot: 2 }, { message: req.body.message ?? '' }, { upsert: true });
+        res.json({ status1: 'Success' });
+    } catch (err) {
+        console.error('/savesdata2 error:', err);
+        res.status(500).json({ status1: 'Error' });
+    }
 });
 
-app.get('/loadsdata2', (req, res) => {
-    if (existsSync('./sdata2.json')) {
-        const fileData = readFileSync('./sdata2.json', 'utf8');
-        res.json(JSON.parse(fileData));
-    } else {
-        res.json({ message: "" });
+app.get('/loadsdata2', async (req, res) => {
+    try {
+        const note = await Note.findOne({ slot: 2 }).lean();
+        res.json({ message: note?.message ?? '' });
+    } catch (err) {
+        console.error('/loadsdata2 error:', err);
+        res.json({ message: '' });
     }
 });
 
