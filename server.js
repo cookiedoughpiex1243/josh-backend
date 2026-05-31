@@ -150,7 +150,7 @@ io.on('connection', (socket) => {
 
         // Broadcast to everyone in the room
         io.to(room).emit('receive_message', msg);
-        if (hasFocus == false) {
+        if (hasFocus == false && msg.sender != "josh") {
             newMsgCounter++;
             writeFileSync("./newmsgcount", String(newMsgCounter));
             io.to('private').emit("unread_update", newMsgCounter);
