@@ -72,6 +72,7 @@ app.use((req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 let hasFocus = false;
+let eHasFocus = false;
 let newMsgCounter = 0;
 
 app.get('/', (req, res) => res.send("Server is awake!"));
@@ -148,12 +149,16 @@ app.get('/loadechat', async (req, res) => {
         res.status(500).json([]);
     }
 });
-
+let elastID;
+let jlastID;
 // --- WebSockets Logic ---
 io.on('connection', (socket) => {
     socket.on('join_room', (room) => {
         socket.join(room);
-        io.to('private').emit("unread_update", newMsgCounter);
+        if (room === 'private') {
+            socket.emit("unread_update", newMsgCounter);
+            socket.emit("lastMessage", {elast: elastID, jlast: jlastID});
+        }
     });
 
     socket.on('send_message', async (data) => {
@@ -197,15 +202,20 @@ io.on('connection', (socket) => {
     });
 
     socket.on("focused", async (data) => {
-        const { room, user } = data;
+        const { room, user, lastID } = data;
         socket.username = user;
         socket.activeRoom = room;
         if (user == "josh" && room == "private") {
             hasFocus = true;
+            jlastID = lastID;
             writeFileSync("./newmsgcount", "0");
             newMsgCounter = 0;
             io.to('private').emit("unread_update", newMsgCounter);
         }
+		else if (user == "emma") {
+			eHasFocus = true;
+			elastID = lastID;
+		}            
     });
 
     socket.on("unfocused", (data) => {
