@@ -23,6 +23,7 @@ const messageSchema = new mongoose.Schema({
     timestamp: { type: String, required: true },
     id:        { type: Number, required: true },
     Rid:       { type: Number, default: null },
+    edited:    { type: Boolean, default: false },
 }, { versionKey: false });
 
 const Message = mongoose.model('Message', messageSchema);
@@ -230,6 +231,16 @@ io.on('connection', (socket) => {
             io.to(room).emit("message_deleted", id);
         } catch (err) {
             console.error('delete_message error:', err);
+        }
+    });
+
+    socket.on("edit_message", async (data) => {
+        const { room, id, newText } = data;
+        try {
+            await Message.updateOne({ room, id: Number(id) }, { text: newText, edited: true });
+            io.to(room).emit("message_edited", { id, newText });
+        } catch (err) {
+            console.error('edit_message error:', err);
         }
     });
 
