@@ -36,6 +36,14 @@ const noteSchema = new mongoose.Schema({
 
 const Note = mongoose.model('Note', noteSchema);
 
+// --- UserStatus Schema & Model ---
+const userStatusSchema = new mongoose.Schema({
+    user:   { type: String, required: true, unique: true },
+    lastID: { type: Number, default: null }
+}, { versionKey: false });
+
+const UserStatus = mongoose.model('UserStatus', userStatusSchema);
+
 // --- System seed message (used after /clearall) ---
 const SYSTEM_SEED = {
     text: "Hello :D, here's some information:\n\n/logout to logout (or just redirect to login page)\n\n/help for this message :D\n\n Message displayed due to chat being cleared with /clearall",
@@ -154,9 +162,17 @@ let elastID;
 let jlastID;
 // --- WebSockets Logic ---
 io.on('connection', (socket) => {
-    socket.on('join_room', (room) => {
+    socket.on('join_room', async (room) => {
         socket.join(room);
         if (room === 'private') {
+            try {
+                const jStatus = await UserStatus.findOne({ user: 'josh' }).lean();
+                const eStatus = await UserStatus.findOne({ user: 'emma' }).lean();
+                jlastID = jStatus ? jStatus.lastID : null;
+                elastID = eStatus ? eStatus.lastID : null;
+            } catch (err) {
+                console.error("Error loading user status:", err);
+            }
             socket.emit("unread_update", newMsgCounter);
             socket.emit("lastMessage", {elast: elastID, jlast: jlastID});
         }
@@ -208,14 +224,24 @@ io.on('connection', (socket) => {
         socket.activeRoom = room;
         if (user == "josh" && room == "private") {
             hasFocus = true;
-            jlastID = lastID;
+            jlastID = lastID ? Number(lastID) : null;
+            try {
+                await UserStatus.findOneAndUpdate({ user: 'josh' }, { lastID: jlastID }, { upsert: true });
+            } catch (err) {
+                console.error("Error updating josh status:", err);
+            }
             writeFileSync("./newmsgcount", "0");
             newMsgCounter = 0;
             io.to('private').emit("unread_update", newMsgCounter);
         }
 		else if (user == "emma") {
 			eHasFocus = true;
-			elastID = lastID;
+			elastID = lastID ? Number(lastID) : null;
+            try {
+                await UserStatus.findOneAndUpdate({ user: 'emma' }, { lastID: elastID }, { upsert: true });
+            } catch (err) {
+                console.error("Error updating emma status:", err);
+            }
 		}            
     });
 
