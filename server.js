@@ -23,7 +23,6 @@ const messageSchema = new mongoose.Schema({
     timestamp: { type: String, required: true },
     id:        { type: Number, required: true },
     Rid:       { type: Number, default: null },
-    edited:    { type: Boolean, default: false },
 }, { versionKey: false });
 
 const Message = mongoose.model('Message', messageSchema);
@@ -35,14 +34,6 @@ const noteSchema = new mongoose.Schema({
 }, { versionKey: false });
 
 const Note = mongoose.model('Note', noteSchema);
-
-// --- UserStatus Schema & Model ---
-const userStatusSchema = new mongoose.Schema({
-    user:   { type: String, required: true, unique: true },
-    lastID: { type: Number, default: null }
-}, { versionKey: false });
-
-const UserStatus = mongoose.model('UserStatus', userStatusSchema);
 
 // --- System seed message (used after /clearall) ---
 const SYSTEM_SEED = {
@@ -162,17 +153,9 @@ let elastID;
 let jlastID;
 // --- WebSockets Logic ---
 io.on('connection', (socket) => {
-    socket.on('join_room', async (room) => {
+    socket.on('join_room', (room) => {
         socket.join(room);
         if (room === 'private') {
-            try {
-                const jStatus = await UserStatus.findOne({ user: 'josh' }).lean();
-                const eStatus = await UserStatus.findOne({ user: 'emma' }).lean();
-                jlastID = jStatus ? jStatus.lastID : null;
-                elastID = eStatus ? eStatus.lastID : null;
-            } catch (err) {
-                console.error("Error loading user status:", err);
-            }
             socket.emit("unread_update", newMsgCounter);
             socket.emit("lastMessage", {elast: elastID, jlast: jlastID});
         }
@@ -224,24 +207,14 @@ io.on('connection', (socket) => {
         socket.activeRoom = room;
         if (user == "josh" && room == "private") {
             hasFocus = true;
-            jlastID = lastID ? Number(lastID) : null;
-            try {
-                await UserStatus.findOneAndUpdate({ user: 'josh' }, { lastID: jlastID }, { upsert: true });
-            } catch (err) {
-                console.error("Error updating josh status:", err);
-            }
+            jlastID = lastID;
             writeFileSync("./newmsgcount", "0");
             newMsgCounter = 0;
             io.to('private').emit("unread_update", newMsgCounter);
         }
 		else if (user == "emma") {
 			eHasFocus = true;
-			elastID = lastID ? Number(lastID) : null;
-            try {
-                await UserStatus.findOneAndUpdate({ user: 'emma' }, { lastID: elastID }, { upsert: true });
-            } catch (err) {
-                console.error("Error updating emma status:", err);
-            }
+			elastID = lastID;
 		}            
     });
 
@@ -257,16 +230,6 @@ io.on('connection', (socket) => {
             io.to(room).emit("message_deleted", id);
         } catch (err) {
             console.error('delete_message error:', err);
-        }
-    });
-
-    socket.on("edit_message", async (data) => {
-        const { room, id, newText } = data;
-        try {
-            await Message.updateOne({ room, id: Number(id) }, { text: newText, edited: true });
-            io.to(room).emit("message_edited", { id, newText });
-        } catch (err) {
-            console.error('edit_message error:', err);
         }
     });
 
