@@ -276,7 +276,6 @@ io.on('connection', (socket) => {
     socket.on("disconnect", (reason) => {
         if (socket.username == "josh" && socket.activeRoom == "private") hasFocus = false, socket.to('private').emit("jGone"), socket.to('private').emit("unfocused", {room:'private', user: "josh"});
 	    else if(socket.username == "emma")socket.to('private').emit("eGone"), eHasFocus = false, socket.to('private').emit("unfocused", {room:'private', user: "emma"});
-        socket.to(data.room).emit("display_typing");
     });
 });
 
