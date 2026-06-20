@@ -211,16 +211,19 @@ io.on('connection', (socket) => {
             writeFileSync("./newmsgcount", "0");
             newMsgCounter = 0;
             io.to('private').emit("unread_update", newMsgCounter);
+	    socket.to(data.room).emit("jFocused");
         }
 		else if (user == "emma") {
 			eHasFocus = true;
 			elastID = lastID;
+			socket.to(data.room).emit('eFocused');
 		}            
     });
 
     socket.on("unfocused", (data) => {
         const { room, user } = data;
-        if (user == "josh" && room == "private") hasFocus = false;
+        if (user == "josh" && room == "private") hasFocus = false,socket.to('private').emit("jGone");
+	    else if(user == "emma")socket.to('private').emit("eGone") ;
     });
 
     socket.on("delete_message", async (data) => {
@@ -234,7 +237,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on("disconnect", (reason) => {
-        if (socket.username == "josh" && socket.activeRoom == "private") hasFocus = false;
+        if (socket.username == "josh" && socket.activeRoom == "private") hasFocus = false, socket.to('private').emit("jGone"), socket.to('private').emit("unfocused", {room:'private', user: "josh"});
+	    else if(socket.username == "emma")socket.to('private').emit("eGone"), socket.to('private').emit("unfocused", {room:'private', user: "emma"});
     });
 });
 
