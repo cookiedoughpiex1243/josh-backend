@@ -9,9 +9,19 @@ import mongoose from 'mongoose';
 let dbReady = false;
 mongoose.connect(process.env.MONGO_URI, {
     maxPoolSize: 5,
-}).then(() => {
+}).then(async () => {
     console.log('MongoDB connected');
     dbReady = true;
+    // Restore persisted last-read cursors
+    try {
+        const jDoc = await mongoose.model('LastRead').findOne({ user: 'josh' }).lean();
+        const eDoc = await mongoose.model('LastRead').findOne({ user: 'emma' }).lean();
+        jlastID = jDoc?.lastID ?? undefined;
+        elastID = eDoc?.lastID ?? undefined;
+        console.log('Restored lastRead — josh:', jlastID, 'emma:', elastID);
+    } catch (err) {
+        console.error('Failed to restore lastRead:', err);
+    }
 }).catch(err => console.error('MongoDB connection error:', err));
 
 
@@ -34,6 +44,14 @@ const noteSchema = new mongoose.Schema({
 }, { versionKey: false });
 
 const Note = mongoose.model('Note', noteSchema);
+
+// --- LastRead Schema & Model (persists each user's read cursor) ---
+const lastReadSchema = new mongoose.Schema({
+    user:   { type: String, required: true, unique: true }, // "josh" or "emma"
+    lastID: { type: Number, default: 0 },
+}, { versionKey: false });
+
+const LastRead = mongoose.model('LastRead', lastReadSchema);
 
 // --- System seed message (used after /clearall) ---
 const SYSTEM_SEED = {
@@ -153,11 +171,21 @@ let elastID;
 let jlastID;
 // --- WebSockets Logic ---
 io.on('connection', (socket) => {
-    socket.on('join_room', (room) => {
+    socket.on('join_room', (data) => {
+        // data can be a string (legacy) or {room, user} object
+        const room = typeof data === 'string' ? data : data.room;
+        const joinUser = typeof data === 'string' ? null : data.user;
         socket.join(room);
+        if (joinUser) {
+            socket.username = joinUser;
+            socket.activeRoom = room;
+        }
         if (room === 'private') {
             socket.emit("unread_update", newMsgCounter);
             socket.emit("lastMessage", {elast: elastID, jlast: jlastID});
+            // Send this user's own last-read cursor so the client knows where to scroll
+            const myLast = joinUser === 'josh' ? jlastID : elastID;
+            socket.emit("myLastRead", myLast ?? null);
             // Emit current online status directly to the newly-joined socket
             if(hasFocus) socket.emit("jFocused");
             if(eHasFocus) socket.emit("eFocused");
@@ -210,17 +238,23 @@ io.on('connection', (socket) => {
         socket.activeRoom = room;
         if (user == "josh" && room == "private") {
             hasFocus = true;
-            jlastID = lastID;
+            if (lastID) {
+                jlastID = lastID;
+                LastRead.findOneAndUpdate({ user: 'josh' }, { lastID }, { upsert: true }).catch(e => console.error('lastRead save error:', e));
+            }
             writeFileSync("./newmsgcount", "0");
             newMsgCounter = 0;
             io.to('private').emit("unread_update", newMsgCounter);
-	    socket.to(data.room).emit("jFocused");
+            socket.to(data.room).emit("jFocused");
         }
-		else if (user == "emma") {
-			eHasFocus = true;
-			elastID = lastID;
-			socket.to(data.room).emit('eFocused');
-		}            
+        else if (user == "emma") {
+            eHasFocus = true;
+            if (lastID) {
+                elastID = lastID;
+                LastRead.findOneAndUpdate({ user: 'emma' }, { lastID }, { upsert: true }).catch(e => console.error('lastRead save error:', e));
+            }
+            socket.to(data.room).emit('eFocused');
+        }
     });
 
     socket.on("unfocused", (data) => {
@@ -242,6 +276,7 @@ io.on('connection', (socket) => {
     socket.on("disconnect", (reason) => {
         if (socket.username == "josh" && socket.activeRoom == "private") hasFocus = false, socket.to('private').emit("jGone"), socket.to('private').emit("unfocused", {room:'private', user: "josh"});
 	    else if(socket.username == "emma")socket.to('private').emit("eGone"), eHasFocus = false, socket.to('private').emit("unfocused", {room:'private', user: "emma"});
+        socket.to(data.room).emit("display_typing");
     });
 });
 
