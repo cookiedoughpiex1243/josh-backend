@@ -222,8 +222,8 @@ io.on('connection', (socket) => {
 
     socket.on("unfocused", (data) => {
         const { room, user } = data;
-        if (user == "josh" && room == "private") hasFocus = false,socket.to('private').emit("jGone");
-	    else if(user == "emma")socket.to('private').emit("eGone") ;
+        if (user == "josh" && room == "private") hasFocus = false;
+
     });
 
     socket.on("delete_message", async (data) => {
