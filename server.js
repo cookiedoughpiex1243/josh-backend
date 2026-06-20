@@ -158,6 +158,8 @@ io.on('connection', (socket) => {
         if (room === 'private') {
             socket.emit("unread_update", newMsgCounter);
             socket.emit("lastMessage", {elast: elastID, jlast: jlastID});
+            if(hasFocus) socket.to('private').emit("jFocused");
+            if(eHasFocus) socket.to('private').emit("eFocused");
         }
     });
 
@@ -238,7 +240,7 @@ io.on('connection', (socket) => {
 
     socket.on("disconnect", (reason) => {
         if (socket.username == "josh" && socket.activeRoom == "private") hasFocus = false, socket.to('private').emit("jGone"), socket.to('private').emit("unfocused", {room:'private', user: "josh"});
-	    else if(socket.username == "emma")socket.to('private').emit("eGone"), socket.to('private').emit("unfocused", {room:'private', user: "emma"});
+	    else if(socket.username == "emma")socket.to('private').emit("eGone"), eHasFocus = false, socket.to('private').emit("unfocused", {room:'private', user: "emma"});
     });
 });
 
