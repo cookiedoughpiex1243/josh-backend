@@ -158,8 +158,9 @@ io.on('connection', (socket) => {
         if (room === 'private') {
             socket.emit("unread_update", newMsgCounter);
             socket.emit("lastMessage", {elast: elastID, jlast: jlastID});
-            if(hasFocus) socket.to('private').emit("jFocused");
-            if(eHasFocus) socket.to('private').emit("eFocused");
+            // Emit current online status directly to the newly-joined socket
+            if(hasFocus) socket.emit("jFocused");
+            if(eHasFocus) socket.emit("eFocused");
         }
     });
 
@@ -225,7 +226,7 @@ io.on('connection', (socket) => {
     socket.on("unfocused", (data) => {
         const { room, user } = data;
         if (user == "josh" && room == "private") hasFocus = false;
-
+        else if (user == "emma") eHasFocus = false;
     });
 
     socket.on("delete_message", async (data) => {
