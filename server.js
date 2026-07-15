@@ -66,14 +66,14 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: ["https://cookiedoughpiex1243.github.io", "https://www.cookiedoughpiex1243.github.io"],
+        origin: ["https://cookiedoughpiex1243.github.io", "https://www.cookiedoughpiex1243.github.io", "http://localhost:8080", "http://127.0.0.1:8080"],
         methods: ["GET", "POST"]
     }
 });
 
 app.use(cors());
 app.use(json());
-const allowedOrigins = ['https://cookiedoughpiex1243.github.io', 'https://www.cookiedoughpiex1243.github.io', "file://"];
+const allowedOrigins = ['https://cookiedoughpiex1243.github.io', 'https://www.cookiedoughpiex1243.github.io', "http://localhost:8080", "http://127.0.0.1:8080", "file://"];
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
