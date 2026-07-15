@@ -149,8 +149,16 @@ app.get('/loadsdata2', async (req, res) => {
 app.get('/loadcdata1', async (req, res) => {
     if (!dbReady) return res.status(503).json([]);
     try {
-        const messages = await Message.find({ room: 'public' }, { _id: 0 }).lean();
-        res.json(messages);
+        let query = { room: 'public' };
+        if (req.query.before && req.query.before !== 'null') query.id = { $lt: Number(req.query.before) };
+        const limit = req.query.limit ? Number(req.query.limit) : 50;
+        
+        const messages = await Message.find(query, { _id: 0 })
+            .sort({ id: -1 })
+            .limit(limit)
+            .lean();
+            
+        res.json(messages.reverse());
     } catch (err) {
         console.error('/loadcdata1 error:', err);
         res.status(500).json([]);
@@ -160,8 +168,16 @@ app.get('/loadcdata1', async (req, res) => {
 app.get('/loadechat', async (req, res) => {
     if (!dbReady) return res.status(503).json([]);
     try {
-        const messages = await Message.find({ room: 'private' }, { _id: 0 }).lean();
-        res.json(messages);
+        let query = { room: 'private' };
+        if (req.query.before && req.query.before !== 'null') query.id = { $lt: Number(req.query.before) };
+        const limit = req.query.limit ? Number(req.query.limit) : 50;
+        
+        const messages = await Message.find(query, { _id: 0 })
+            .sort({ id: -1 })
+            .limit(limit)
+            .lean();
+            
+        res.json(messages.reverse());
     } catch (err) {
         console.error('/loadechat error:', err);
         res.status(500).json([]);
