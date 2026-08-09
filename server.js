@@ -191,6 +191,18 @@ app.get('/loadechat', async (req, res) => {
         res.status(500).json([]);
     }
 });
+
+// Route to fetch every message in the database without limits
+app.get('/loadefull', async (req, res) => {
+    try {
+        // Fetch all messages sorted chronologically by ID/timestamp
+        const allMessages = await Message.find({room: "private"}).sort({ id: 1 });
+        res.json(allMessages);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch chat log", details: err.message });
+    }
+});
+
 let elastID;
 let jlastID;
 // --- WebSockets Logic ---
