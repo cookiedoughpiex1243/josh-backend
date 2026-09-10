@@ -4,6 +4,17 @@ import { writeFileSync, existsSync, readFileSync } from 'fs'; // kept for newmsg
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
+import dns from 'dns';
+
+// Fix for Node.js on Windows querySrv ECONNREFUSED with MongoDB Atlas
+if (process.platform === 'win32') {
+    try {
+        dns.setServers(['8.8.8.8', '1.1.1.1']);
+    } catch (e) {}
+}
+
+// Load .env variables (Node 20.12+)
+try { process.loadEnvFile(); } catch (e) {}
 
 // --- MongoDB Connection ---
 let dbReady = false;
@@ -66,14 +77,29 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: ["https://cookiedoughpiex1243.github.io", "https://www.cookiedoughpiex1243.github.io", "http://localhost:8080", "http://127.0.0.1:8080"],
+        origin: [
+            "https://cookiedoughpiex1243.github.io",
+            "https://www.cookiedoughpiex1243.github.io",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+            "http://localhost:8080",
+            "http://127.0.0.1:8080"
+        ],
         methods: ["GET", "POST"]
     }
 });
 
 app.use(cors());
 app.use(json());
-const allowedOrigins = ['https://cookiedoughpiex1243.github.io', 'https://www.cookiedoughpiex1243.github.io', "http://localhost:8080", "http://127.0.0.1:8080", "file://"];
+const allowedOrigins = [
+    'https://cookiedoughpiex1243.github.io',
+    'https://www.cookiedoughpiex1243.github.io',
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "file://"
+];
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
@@ -315,4 +341,4 @@ io.on('connection', (socket) => {
     });
 });
 
-httpServer.listen(PORT, () => console.log(`Listening on ${PORT}`));
+httpServer.listen(PORT, '0.0.0.0', () => console.log(`Listening on ${PORT}`));
