@@ -254,9 +254,29 @@ io.on('connection', (socket) => {
         }
     });
 
+    const clearTypingTimeout = () => {
+        if (socket.typingTimeout) {
+            clearTimeout(socket.typingTimeout);
+            socket.typingTimeout = null;
+        }
+    };
+
+    const stopSocketTyping = (room) => {
+        const targetRoom = room || socket.activeRoom || 'private';
+        if (socket.typingTimeout) {
+            clearTimeout(socket.typingTimeout);
+            socket.typingTimeout = null;
+        }
+        if (targetRoom) {
+            socket.to(targetRoom).emit("hide_typing");
+        }
+    };
+
     socket.on('send_message', async (data) => {
         const { room, text, sender, timestamp, id, Rid } = data;
         const msg = { text, sender, timestamp, id, Rid };
+
+        stopSocketTyping(room);
 
         // Persist to MongoDB
         try {
@@ -287,11 +307,22 @@ io.on('connection', (socket) => {
     });
 
     socket.on("typing", (data) => {
-        socket.to(data.room).emit("display_typing");
+        const room = (typeof data === 'string' ? data : data?.room) || socket.activeRoom || 'private';
+
+        if (!socket.typingTimeout) {
+            socket.to(room).emit("display_typing");
+        } else {
+            clearTimeout(socket.typingTimeout);
+        }
+
+        socket.typingTimeout = setTimeout(() => {
+            stopSocketTyping(room);
+        }, 2000);
     });
 
     socket.on("stop_typing", (data) => {
-        socket.to(data.room).emit("hide_typing");
+        const room = typeof data === 'string' ? data : data?.room;
+        stopSocketTyping(room || socket.activeRoom || 'private');
     });
 
     socket.on("focused", async (data) => {
@@ -336,6 +367,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on("disconnect", (reason) => {
+        const room = socket.activeRoom || 'private';
+        stopSocketTyping(room);
         if (socket.username == "josh" && socket.activeRoom == "private") hasFocus = false, socket.to('private').emit("jGone"), socket.to('private').emit("unfocused", {room:'private', user: "josh"});
 	    else if(socket.username == "emma")socket.to('private').emit("eGone"), eHasFocus = false, socket.to('private').emit("unfocused", {room:'private', user: "emma"});
     });
