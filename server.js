@@ -76,6 +76,7 @@ const SYSTEM_SEED = {
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
+    maxHttpBufferSize: 2.5e7,
     cors: {
         origin: [
             "https://cookiedoughpiex1243.github.io",
@@ -90,7 +91,7 @@ const io = new Server(httpServer, {
 });
 
 app.use(cors());
-app.use(json());
+app.use(json({ limit: '25mb' }));
 const allowedOrigins = [
     'https://cookiedoughpiex1243.github.io',
     'https://www.cookiedoughpiex1243.github.io',
@@ -272,7 +273,7 @@ io.on('connection', (socket) => {
         }
     };
 
-    socket.on('send_message', async (data) => {
+    socket.on('send_message', async (data, ack) => {
         const { room, text, sender, timestamp, id, Rid } = data;
         const msg = { text, sender, timestamp, id, Rid };
 
@@ -292,6 +293,9 @@ io.on('connection', (socket) => {
             newMsgCounter++;
             writeFileSync("./newmsgcount", String(newMsgCounter));
             io.to('private').emit("unread_update", newMsgCounter);
+        }
+        if (typeof ack === 'function') {
+            ack({ status: 'ok' });
         }
     });
 
