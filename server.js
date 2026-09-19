@@ -5,6 +5,13 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
 import dns from 'dns';
+import multer from 'multer';
+import { uploadToImageKit } from './imagekit.js';
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 100 * 1024 * 1024 }
+});
 
 // Fix for Node.js on Windows querySrv ECONNREFUSED with MongoDB Atlas
 if (process.platform === 'win32') {
@@ -121,6 +128,20 @@ let eHasFocus = false;
 let newMsgCounter = 0;
 
 app.get('/', (req, res) => res.send("Server is awake!"));
+
+// --- ImageKit Upload Endpoint ---
+app.post('/api/upload', upload.single('media'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'No file attached' });
+        }
+        const mediaUrl = await uploadToImageKit(req.file);
+        res.json({ success: true, url: mediaUrl });
+    } catch (err) {
+        console.error('/api/upload error:', err);
+        res.status(500).json({ success: false, error: 'Upload failed' });
+    }
+});
 
 // --- Notes Logic (MongoDB) ---
 app.post('/savesdata1', async (req, res) => {
@@ -274,7 +295,17 @@ io.on('connection', (socket) => {
     };
 
     socket.on('send_message', async (data, ack) => {
-        const { room, text, sender, timestamp, id, Rid } = data;
+        let { room, text, sender, timestamp, id, Rid } = data;
+
+        // Auto-upload Base64 images to ImageKit so Base64 is never stored in MongoDB
+        if (typeof text === 'string' && text.startsWith('data:image/')) {
+            try {
+                text = await uploadToImageKit(text);
+            } catch (imgErr) {
+                console.error('ImageKit auto-upload error:', imgErr);
+            }
+        }
+
         const msg = { text, sender, timestamp, id, Rid };
 
         stopSocketTyping(room);

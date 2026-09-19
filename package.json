@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^18.0.1",
     "express": "^4.22.2",
+    "imagekit": "^6.0.0",
     "mongoose": "^9.6.3",
+    "multer": "^2.4.0",
     "socket.io": "^4.7.2",
     "socket.io-client": "^4.8.3"
   }
